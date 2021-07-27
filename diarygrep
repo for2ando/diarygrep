@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+pname=$(basename "$0")
+usage="$pname String [...]
+"
+
+diaryfile=~/diary
+delim=""
+grepopt=""
+errp=""
+while true; do
+  case "$1" in
+  -d|--delimiter) delim="$2"; shift 2;;
+  -D|--diary) diaryfile="$2"; shift 2;;
+  -E|--extended-regexp) grepopt="$grepopt $1"; shift;;
+  -F|--fixed-string) grepopt="$grepopt $1"; shift;;
+  -+) echo "$pname: '$1': Unknown option.">&2; errp=1; shift;;
+  *) break;;
+  esac
+done
+test -n "$errp" && exit $errp
+test $# -le 0 && {
+  echo "$pname: At lease one argument: String required.">&2; exit 1
+}
+
+regexps=()
+i=0
+for arg in "$@"; do
+  regexps[$((i++))]=-e
+  regexps[$((i++))]="$arg"
+done
+cat "$diaryfile" | diarysplit${delim:+ -d "$delim"} | echo grep $grepopt "${regexps[@]}"

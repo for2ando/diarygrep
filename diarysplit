@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+pname=$(basename "$0")
+
+delimre="[、。]"
+errp=""
+while true; do
+  case "$1" in
+  -d|--delimiter) delimre="$2"; shift 2;;
+  -*) echo "$pname: '$1': Unknown option.">&2; errp=1; shift;;
+  *) break;;
+  esac
+done
+test -n "$errp" && exit $errp
+
+test $# -le 0 && set -- -
+datere='&?[A-Za-z][a-z][a-z] [0-9]{1,2}, [0-9]{1,4}'
+cat "$@" | awk -v delimre="$delimre" -v datere="$datere" '{
+  if (matched = match($0, "^" datere " ")) {
+    date = substr($0, RSTART, RLENGTH)
+  } else {
+    matched = match($0, /\s*/)
+  }
+  if (matched) { $0 = substr($0, RSTART+RLENGTH); }
+  while (match($0, delimre)) {
+    clause = substr($0, 1, RSTART+RLENGTH-1)
+    print date clause
+    $0 = substr($0, RSTART+RLENGTH)
+  }
+  if (length($0) > 0) print date $0
+}'
